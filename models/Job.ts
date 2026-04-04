@@ -5,7 +5,9 @@ const JobSchema = new Schema({
   company: { type: String, default: "Unknown" },
   score: { type: Number, default: 0 },
   source: { type: String, default: "n8n" },
-  postedAt: { type: Date, default: Date.now }
+  postedAt: { type: Date, default: Date.now },
+  applyLink: { type: String, default: "" },
+  location: { type: String, default: "" },
 });
 
 // Agar model pehle se bana hai toh wahi use karo, nahi toh naya banao
