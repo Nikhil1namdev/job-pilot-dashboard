@@ -74,6 +74,8 @@ export async function POST(request: Request) {
           source: String(body.source || "n8n").trim(),
           postedAt: new Date(),
           location: String(body.location || "").trim(),
+          salary: body.salary || "Not mentioned",
+postedDate: body.posted_at || "Unknown",
         }
       },
       { upsert: true, returnDocument: 'after' }

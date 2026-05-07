@@ -1,0 +1,33 @@
+n8n ne data DB mein dala.
+
+Next.js API ne DB se data uthaya.
+
+Frontend ne API se data fetch kiya aur Map karke screen par dikha diya.
+
+⛓️ Asli Flow (Step-by-Step):
+n8n (The Sender):
+n8n ek postman ki tarah hai. Wo SerpApi se job lata hai, Gemini se analyze karwata hai, aur fir ek HTTP Request bhejta hai.
+
+The API Route (The Receiver):
+n8n apna data tumhare Next.js ke ek "URL" par bhejta hai. Wo URL ya toh /api/webhook hogi ya /api/jobs.
+
+Agar n8n ne http://localhost:3000/api/jobs par POST request bheji, toh api/jobs/route.ts wala code chalega.
+
+Agar n8n ne http://localhost:3000/api/webhook par bheji, toh api/webhook/route.ts chalega.
+
+Database (The Final Destination):
+In dono files mein se jo bhi file n8n se connect hogi, wahi Mongoose (Job.create ya Job.findOneAndUpdate) ka use karke MongoDB mein data entry karegi.
+
+🧐 Tumhare Case mein kaunsa use ho raha hai?
+Ye check karne ke liye apne n8n ke aakhri HTTP Node ko dekho:
+
+Usme URL kya likhi hai?
+
+Agar URL /api/jobs hai, toh pehli file save kar rahi hai.
+
+Agar URL /api/webhook hai, toh doosri file.
+
+💡 Dono Routes kyu hain? (Important Concept)
+api/jobs/route.ts: Ye tumne tab banaya tha jab tum Dashboard se "Manual" job add karna chahte ho ya search/delete karna chahte ho.
+
+api/webhook/route.ts: Ye tumne khaas n8n (Automation) ke liye banaya hai taaki automation ka raasta ekdam alag aur saaf rahe.

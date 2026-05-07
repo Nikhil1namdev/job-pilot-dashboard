@@ -26,3 +26,30 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     return NextResponse.json({ error: "Internal Server Error", details: error.message }, { status: 500 });
   } 
 }
+
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  try {
+    const { id } = await params;
+    await connectToDatabase();
+    
+    const body = await req.json();
+    const { status } = body;
+
+    console.log(`Updating Job ${id} status to:`, status);
+
+    const updatedJob = await Job.findByIdAndUpdate(
+      id,
+      { $set: { status } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedJob) {
+      return NextResponse.json({ error: "Job not found in DB" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, data: updatedJob });
+  } catch (error: any) {
+    console.error("❌ Patch Error:", error);
+    return NextResponse.json({ error: "Internal Server Error", details: error.message }, { status: 500 });
+  }
+}

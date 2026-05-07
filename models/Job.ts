@@ -8,6 +8,13 @@ const JobSchema = new Schema({
   postedAt: { type: Date, default: Date.now },
   applyLink: { type: String, default: "" },
   location: { type: String, default: "" },
+  salary: { type: String, default: "Not mentioned" },
+  postedDate: { type: String, default: "Unknown" },
+  status: { 
+    type: String, 
+    default: "Not Applied", 
+    enum: ["Not Applied", "Applied", "Interviewing", "Offer", "Rejected"] 
+  },
 });
 
 // Agar model pehle se bana hai toh wahi use karo, nahi toh naya banao
