@@ -1,17 +1,28 @@
 import mongoose from 'mongoose';
 
+// 1. '.env' file mein se MONGODB_URI ka password aur address nikalna
 const MONGODB_URI = process.env.MONGODB_URI || "";
 
+// Agar '.env' file mein key missing hai toh error throw karo taaki developer ko pata chal sake
 if (!MONGODB_URI) {
   throw new Error("Pehle .env file mein MONGODB_URI dalo!");
 }
 
+/**
+ * 🔌 DATABASE CONNECTION FUNCTION
+ * ------------------------------
+ * Next.js serverless architecture par chalta hai, jahan baar-baar server functions
+ * open aur close hote hain. Har page click par naya database connection na bane,
+ * isliye hum pehle se connected mongoose instance ko reuse karte hain.
+ */
 async function connectToDatabase() {
-  // Agar pehle se connected hai toh kuch mat karo
+  // connection.readyState agar:
+  // 0 = Disconnected, 1 = Connected, 2 = Connecting, 3 = Disconnecting.
+  // Agar readyState >= 1 hai (yani connected ya connecting), toh naya connection mat banao, wahin se return ho jao!
   if (mongoose.connection.readyState >= 1) return;
 
   try {
-    // OPTIONS KO EKDOM KHALI RAKHO (Koi job_pilot_db nahi)
+    // Mongoose ke through MongoDB database se connect karo
     await mongoose.connect(MONGODB_URI);
     console.log("✅ MongoDB Connected Successfully!");
   } catch (error) {
