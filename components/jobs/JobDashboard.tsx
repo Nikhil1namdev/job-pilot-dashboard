@@ -18,6 +18,7 @@ import {
 import { Button } from "../ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import Pagination from "./Pagination";
+import ThemeToggle from "@/components/theme/ThemeToggle";
 
 // TypeScript interface for a Job document
 interface Job {
@@ -276,9 +277,14 @@ export default function JobDashboard({
             Analyze, track, and pilot your automatic job applications with premium AI-fitted compatibility insights.
           </p>
         </div>
-        <div className="flex items-center gap-2.5 text-xs font-bold px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full text-zinc-600 dark:text-zinc-300 self-start md:self-auto shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          Active Session • Local DB Connected
+        <div className="flex items-center gap-3 self-start md:self-auto">
+          {/* Status indicator badge */}
+          <div className="flex items-center gap-2.5 text-xs font-bold px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full text-zinc-600 dark:text-zinc-300 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            Active Session • Local DB Connected
+          </div>
+          {/* Theme toggle button — switches between light and dark mode */}
+          <ThemeToggle />
         </div>
       </motion.div>
 

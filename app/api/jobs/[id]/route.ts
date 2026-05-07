@@ -9,7 +9,7 @@ import Job from "@/models/Job"; // Mongoose Model use karenge
  * tab Next.js is Dynamic Route ([id]) ke 'DELETE' function ko call karta hai.
  * Path URL kuch aisa hota hai: `/api/jobs/65f1234abcd...`
  */
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // 1. Next.js router automatic parameter se dynamic 'id' nikalta hai (await params)
     const { id } = await params; 
@@ -41,7 +41,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
  * tab browser is Dynamic Route par ek PATCH request bhejta hai taaki full model update na karke
  * sirf ek 'status' property ko update kiya ja sake.
  */
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // 1. Dynamic parameters se ID nikalo
     const { id } = await params;

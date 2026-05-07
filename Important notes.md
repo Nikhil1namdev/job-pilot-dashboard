@@ -106,3 +106,115 @@ Humne pehle saare jobs client-side par load karke filter kiye the. Lekin agar da
 4. **Mongoose Models** humare database table (collection) ka structure tayar karte hain.
 5. **n8n Automation** hamare server par automatic data send karta hai Webhook API ke through.
 6. **Premium SaaS UI:** Soft custom shadows, linear gradients, dynamic elevations, aur **Framer Motion spring-entrance delay layout transitions** app ko industry-grade elite feel dete hain.
+
+---
+
+## 🌗 5. Dark Mode (next-themes Library)
+
+### Installation
+```bash
+npm install next-themes
+```
+
+### Provider Setup (`providers/ThemeProvider.tsx`)
+```tsx
+"use client";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
+
+export default function ThemeProvider({ children }) {
+  return (
+    <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+      {children}
+    </NextThemesProvider>
+  );
+}
+```
+
+### Root Layout Integration (`app/layout.tsx`)
+```tsx
+// html tag par suppressHydrationWarning ZAROOR lagao
+<html suppressHydrationWarning>
+  <body suppressHydrationWarning>
+    <ThemeProvider>
+      {children}
+    </ThemeProvider>
+  </body>
+</html>
+```
+
+### ThemeToggle Component (Hydration-safe pattern)
+```tsx
+"use client";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
+
+export default function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  
+  // mounted check ZAROOR karo — server pe theme nahi pata hota
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return <div className="h-9 w-9" />; // placeholder
+  
+  return (
+    <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+      {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+    </button>
+  );
+}
+```
+
+### Tailwind CSS Dark Mode Strategy
+Tailwind v4 mein `globals.css` mein yeh line already exist karti hai:
+```css
+@custom-variant dark (&:is(.dark *));
+```
+Yeh batata hai ki jab `<html>` par `.dark` class hogi, tabhi `dark:` prefix wali classes activate hongi.
+
+### Hydration Mismatch Kya Hai?
+| Problem | Solution |
+|---|---|
+| Server renders HTML assuming light theme | `suppressHydrationWarning` on `<html>` |
+| Browser reads localStorage and might use dark | `next-themes` handles sync automatically |
+| ThemeToggle doesn't know theme on server | `mounted` state guard before rendering icons |
+| Flash of wrong theme (FOUC) | next-themes injects inline script before page paint |
+
+### Common Dark Mode Class Patterns
+```tsx
+// Backgrounds
+"bg-white dark:bg-zinc-900"
+"bg-zinc-50 dark:bg-zinc-950"
+
+// Text
+"text-zinc-900 dark:text-white"
+"text-zinc-500 dark:text-zinc-400"
+
+// Borders
+"border-zinc-200 dark:border-zinc-800"
+
+// Cards
+"bg-gradient-to-br from-white to-zinc-50/50 dark:from-zinc-900 dark:to-zinc-950"
+
+// Hover states
+"hover:bg-zinc-100 dark:hover:bg-zinc-800"
+
+// Shadows
+"shadow-[0_4px_20px_rgba(0,0,0,0.015)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)]"
+```
+
+### Folder Structure
+```
+providers/
+└── ThemeProvider.tsx   ← next-themes wrapper (Client Component)
+components/
+└── theme/
+    └── ThemeToggle.tsx ← Sun/Moon toggle button (Client Component)
+```
+
+### Why next-themes Over Manual Implementation?
+- ✅ Prevents hydration mismatch automatically
+- ✅ Handles SSR safely (no window access issues)
+- ✅ Supports light / dark / system modes out of the box
+- ✅ Persists theme in localStorage without boilerplate
+- ✅ Industry-standard in production Next.js apps (Vercel, Linear, etc.)
+

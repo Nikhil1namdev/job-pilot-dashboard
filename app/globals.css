@@ -123,6 +123,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Smooth theme transition: all color/background changes animate over 200ms */
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   html {
     @apply font-sans;
