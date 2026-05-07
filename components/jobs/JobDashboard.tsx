@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Briefcase, 
@@ -16,7 +16,8 @@ import {
   Sparkles
 } from "lucide-react";
 import { Button } from "../ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Pagination from "./Pagination";
 
 // TypeScript interface for a Job document
 interface Job {
@@ -34,10 +35,28 @@ interface Job {
 // TypeScript interface for component props
 interface JobDashboardProps {
   initialJobs: Job[];
+  totalJobs: number;
+  totalPages: number;
+  currentPage: number;
+  limit: number;
+  stats: {
+    total: number;
+    topMatches: number;
+    applied: number;
+    avgScore: number;
+  };
 }
 
-export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
+export default function JobDashboard({ 
+  initialJobs = [],
+  totalJobs,
+  totalPages,
+  currentPage,
+  limit,
+  stats,
+}: JobDashboardProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   // 1. LOCAL STATE MANAGEMENT (React States)
   // ----------------------------------------
@@ -54,21 +73,59 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
   // [deletingId]: Jab delete operation chal raha ho, toh loader show karne ke liye.
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // 2. CALCULATIONS USING useMemo (Optimized Performance)
-  // -----------------------------------------------------
-  // useMemo tabhi run hota hai jab uske bracket ke dependencies (jaise jobs array) change ho.
-  // Iska fayda yeh hai ki jab user search bar mein type karega, toh stats recalculate nahi honge, jisse app bohot fast chalega!
-  const stats = useMemo(() => {
-    const total = jobs.length; // Total job cards ka count
-    const topMatches = jobs.filter((job) => (job.score || 0) >= 90).length; // 90%+ match wali jobs
-    const applied = jobs.filter((job) => job.status === "Applied").length; // Jinka status "Applied" hai
-    
-    // Average Match Score nikalna (reduce method se saare scores add kiye aur average nikala)
-    const totalScore = jobs.reduce((acc, job) => acc + (job.score || 0), 0);
-    const avgScore = total > 0 ? Math.round(totalScore / total) : 0;
+  // Sync local jobs state with server-fetched jobs when initialJobs changes
+  useEffect(() => {
+    setJobs(initialJobs);
+  }, [initialJobs]);
 
-    return { total, topMatches, applied, avgScore };
-  }, [jobs]); // Yeh tabhi dobara chalega jab jobs delete ya update hongi!
+  // Synchronize component states with URL search parameters on mount or param changes
+  useEffect(() => {
+    const search = searchParams.get("search") || "";
+    setSearchTerm(search);
+    
+    const status = searchParams.get("status") || "All";
+    setStatusFilter(status);
+    
+    const score = searchParams.get("score") || "all";
+    setScoreFilter(score);
+  }, [searchParams]);
+
+  // Debounced Search URL Parameter Updater
+  useEffect(() => {
+    const currentSearch = searchParams.get("search") || "";
+    if (searchTerm === currentSearch) return;
+
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (searchTerm) {
+        params.set("search", searchTerm);
+      } else {
+        params.delete("search");
+      }
+      params.set("page", "1"); // Reset to page 1 on new search
+      router.push(`/dashboard?${params.toString()}`);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, searchParams, router]);
+
+  // Handle status filter clicks and update URL
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("status", status);
+    params.set("page", "1"); // Reset to page 1 on filter change
+    router.push(`/dashboard?${params.toString()}`);
+  };
+
+  // Handle score filter clicks and update URL
+  const handleScoreFilterChange = (score: string) => {
+    setScoreFilter(score);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("score", score);
+    params.set("page", "1"); // Reset to page 1 on filter change
+    router.push(`/dashboard?${params.toString()}`);
+  };
 
   // 3. OPTIMISTIC STATUS UPDATE FUNCTION (Inline PATCH call)
   // --------------------------------------------------------
@@ -129,30 +186,6 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
       setDeletingId(null);
     }
   };
-
-  // 5. LIVE FILTERING LOGIC
-  // -----------------------
-  // Hum search box, status, aur score filters ke basis par jobs array ko real-time filter kar rahe hain.
-  const filteredJobs = useMemo(() => {
-    return jobs.filter((job) => {
-      // Search term check: Job Title, Company, ya Location mein se kahin bhi matches ho
-      const matchesSearch =
-        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (job.location || "").toLowerCase().includes(searchTerm.toLowerCase());
-
-      // Status check: Agar status filter "All" hai toh sab show karo, warna specific match dikhao
-      const matchesStatus = statusFilter === "All" || job.status === statusFilter;
-
-      // Score range check
-      let matchesScore = true;
-      if (scoreFilter === "high") matchesScore = (job.score || 0) >= 80;
-      else if (scoreFilter === "medium") matchesScore = (job.score || 0) >= 50 && (job.score || 0) < 80;
-      else if (scoreFilter === "low") matchesScore = (job.score || 0) < 50;
-
-      return matchesSearch && matchesStatus && matchesScore;
-    });
-  }, [jobs, searchTerm, statusFilter, scoreFilter]); // Jab bhi inme se koi bhi state badlegi, list automatically update ho jayegi!
 
   // Status badging styles (Slightly enhanced contrasts for a more premium look)
   const getStatusStyle = (status: string) => {
@@ -365,7 +398,7 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
             ].map((scoreOpt) => (
               <motion.button
                 key={scoreOpt.id}
-                onClick={() => setScoreFilter(scoreOpt.id)}
+                onClick={() => handleScoreFilterChange(scoreOpt.id)}
                 whileTap={{ scale: 0.98 }}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   scoreFilter === scoreOpt.id
@@ -385,7 +418,7 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
           {["All", "Not Applied", "Applied", "Interviewing", "Offer", "Rejected"].map((status) => (
             <motion.button
               key={status}
-              onClick={() => setStatusFilter(status)}
+              onClick={() => handleStatusFilterChange(status)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               className={`px-4 py-1.5 rounded-full text-xs font-extrabold border transition-all cursor-pointer ${
@@ -405,7 +438,7 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
         variants={itemVariants}
         className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-[0_12px_40px_rgba(0,0,0,0.03)] overflow-hidden"
       >
-        {filteredJobs.length === 0 ? (
+        {jobs.length === 0 ? (
           <div className="text-center py-16 px-4">
             <div className="h-12 w-12 bg-zinc-50 dark:bg-zinc-800/80 rounded-full flex items-center justify-center mx-auto mb-3">
               <Search className="h-5 w-5 text-zinc-400" />
@@ -432,7 +465,7 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
                 </thead>
                 <tbody className="divide-y divide-zinc-200/50 dark:divide-zinc-800/40">
                   <AnimatePresence mode="popLayout">
-                    {filteredJobs.map((job) => (
+                    {jobs.map((job) => (
                       <motion.tr 
                         key={job._id}
                         layout
@@ -572,7 +605,7 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
             {/* MOBILE CARD VIEW (Visible on screens below md - zero horizontal scrolling!) */}
             <div className="md:hidden divide-y divide-zinc-150 dark:divide-zinc-800/60">
               <AnimatePresence mode="popLayout">
-                {filteredJobs.map((job) => (
+                {jobs.map((job) => (
                   <motion.div
                     key={job._id}
                     layout
@@ -691,6 +724,14 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
                 ))}
               </AnimatePresence>
             </div>
+
+            {/* Pagination Controls */}
+            <Pagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalJobs={totalJobs}
+              limit={limit}
+            />
           </>
         )}
       </motion.div>

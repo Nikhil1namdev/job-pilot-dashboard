@@ -80,12 +80,15 @@ Is file ke pass do bade kaam hain:
 
 ### 3. `components/jobs/JobDashboard.tsx` (The Brain of the UI)
 Yeh aapke dashboard ka sabse bada aur zordaar hissa hai. Isme:
-* Saare Metric cards ke calculations hain.
-* Search Bar aur Category Pills (`All`, `Applied`, etc.) ki filtering logic hai.
+* Saare Metric cards ke dynamic layouts hain.
+* Search inputs, score controls, aur status pills ki event handlers hain jo URL updates aur state syncing handle karti hain.
 * Dropdown ka color coding logic hai (jaise `Rejected` par Red background, `Offer` par Green).
 
-### 4. `app/page.tsx` (The Gateway)
-Yeh aapke app ka entry point hai. Yeh server par database se connect hota hai (`connectToDatabase()`), saare jobs fetch karta hai, unhe serialize karta hai, aur page ko start karte hi `<JobDashboard initialJobs={jobs} />` ko de deta hai.
+### 4. `app/dashboard/page.tsx` (The Gateway to Main App)
+Yeh aapke main app ka entry point hai. Yeh server par URL parameters se `search`, `statusFilter`, aur `scoreFilter` read karta hai, dynamic database aggregations chala ke global statistics nikalta hai, and skip/limit pagination apply karke `<JobDashboard>` ko sirf requested subset (8 items per page) provide karta hai.
+
+### 5. `app/page.tsx` (The Premium SaaS Landing Page)
+Yeh root route par user ko welcome karne ke liye ek gorgeous glassmorphic landing page render karta hai, jisme clean feature lists, glowing gradients, aur direct `/dashboard` navigation buttons provide kiye gaye hain.
 
 ---
 

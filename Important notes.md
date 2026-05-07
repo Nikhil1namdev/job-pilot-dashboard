@@ -69,10 +69,40 @@ Agar aage chalkar hum:
 
 ---
 
+## 📈 4. Server-side Pagination & URL-driven Search (Pro-level Architecture)
+
+Humne pehle saare jobs client-side par load karke filter kiye the. Lekin agar database mein 10,000+ jobs hon toh user ka browser crash ho jata hai! Isliye humne **Server-side Pagination** aur **URL-driven State Management** implement kiya hai.
+
+### 🛠️ Important Concepts in Our Pagination:
+
+1. **`skip()` and `limit()` in MongoDB:**
+   * **`limit(8)`:** Server se ek baar mein maximum 8 jobs hi fetch ki jayengi.
+   * **`skip((page - 1) * limit)`:** Jaise agar page 2 hai, toh skip hoga `(2 - 1) * 8 = 8` records. Yaani pehli 8 jobs chhod kar agli 8 jobs fetch hongi!
+   * Is tarah server par data-load hamesha lightweight aur fast rehta hai.
+
+2. **Next.js App Router `searchParams`:**
+   * Next.js mein pages as a prop `searchParams` receive karte hain.
+   * `searchParams` ek **Promise** hota hai (Next.js 15+). Hum use `await` karke safely URL ke parameter values (jaise `?page=2`, `?search=react`, `?status=Applied`) nikal sakte hain.
+   * Jab URL badalta hai, Next.js Server Component page automatically database se naya paginated aur filtered data fetch karta hai.
+
+3. **Debounced Search Input (typing control):**
+   * Agar search bar mein "react" type karte huye har letter par database query run hogi toh server crash ho sakta hai.
+   * Isliye humne **300ms ka Debounce Timer** set kiya hai. User jab typing rokta hai, sirf tabhi URL parameter update hota hai aur database call chalti hai!
+
+4. **Dynamic Database Aggregation (Global stats):**
+   * Kyunki client-side par sirf 8 jobs hain, hum purane local state se total dashboard counters (jaise Avg Fit Score, Top Matches) accurate nahi nikal sakte the.
+   * Iske liye humne **MongoDB Aggregation Pipelines** (`Job.aggregate` aur `Job.countDocuments` in parallel) use kiya hai jo server-side par bina data transfer ke micro-seconds mein accurate stats aggregate kar ke client ko bhejte hain.
+
+5. **Dedicated `/dashboard` Route:**
+   * Root route `/` par humne ek **gorgeous SaaS Landing Page** rakha hai jo users ko attractive lagta hai aur product ke bare mein batata hai.
+   * `/dashboard` route par main application dashboard render hota hai, jisse business architecture standard, scalable aur cleanly organized bani rehti hai.
+
+---
+
 ## ⭐ Summary Sheet (For Quick Revision)
 1. **Next.js** = React (UI interactions) + Node.js (Server capabilities) + Express-like Routing + MongoDB.
-2. **Server side** par Database connection and Fetching hota hai (`page.tsx`).
-3. **Client side** par States (`useState`), effects, aur filtering chalti hai (`JobDashboard.tsx`).
+2. **Server side** par Database connection, Fetching, Dynamic counts, aur Paginated limits query hoti hain (`app/dashboard/page.tsx`).
+3. **Client side** par States (`useState`), effects, debouncing, aur navigation parameters sync chalte hain (`JobDashboard.tsx` & `Pagination.tsx`).
 4. **Mongoose Models** humare database table (collection) ka structure tayar karte hain.
 5. **n8n Automation** hamare server par automatic data send karta hai Webhook API ke through.
 6. **Premium SaaS UI:** Soft custom shadows, linear gradients, dynamic elevations, aur **Framer Motion spring-entrance delay layout transitions** app ko industry-grade elite feel dete hain.
