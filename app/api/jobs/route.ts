@@ -54,37 +54,72 @@ import Job from '@/models/Job';
 //   }
 // }
 export async function POST(request: Request) {
-  try {
-    await connectToDatabase();
-    const body = await request.json();
+//   try {
+//     await connectToDatabase();
+//     const body = await request.json();
     
-    // Exact check
-    // console.log("applyLink value:", body.applyLink);
-    // console.log("applyLink type:", typeof body.applyLink);
-    // console.log("applyLink length:", body.applyLink?.length);
+//     // Exact check
+//     // console.log("applyLink value:", body.applyLink);
+//     // console.log("applyLink type:", typeof body.applyLink);
+//     // console.log("applyLink length:", body.applyLink?.length);
+
+//     const job = await Job.findOneAndUpdate(
+//       { title: body.title, company: body.company },
+//       {
+//         $set: {
+//           title: body.title || "Untitled Position",
+//           company: body.company || "Unknown Company",
+//           score: Number(body.score) || 0,
+//           applyLink: String(body.applyLink || "").trim(),
+//           source: String(body.source || "n8n").trim(),
+//           postedAt: new Date(),
+//           location: String(body.location || "").trim(),
+//           salary: body.salary || "Not mentioned",
+// postedDate: body.posted_at || "Unknown",
+//         }
+//       },
+//       { upsert: true, returnDocument: 'after' }
+//     );
+
+//     console.log("Saved job:", job); // ← DB mein kya gaya
+
+//     return NextResponse.json({ success: true, data: job }, { status: 201 });
+//   } catch (error: any) {
+//     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+//   }
+try {
+    await connectToDatabase();
+
+    const body = await request.json();
 
     const job = await Job.findOneAndUpdate(
-      { title: body.title, company: body.company },
+      body.job_id
+        ? { job_id: body.job_id }
+        : { title: body.title, company: body.company },
       {
         $set: {
-          title: body.title || "Untitled Position",
-          company: body.company || "Unknown Company",
+          title: String(body.title || "Untitled Position").trim(),
+          company: String(body.company || "Unknown Company").trim(),
           score: Number(body.score) || 0,
+          reason: String(body.reason || "").trim(),
           applyLink: String(body.applyLink || "").trim(),
           source: String(body.source || "n8n").trim(),
-          postedAt: new Date(),
           location: String(body.location || "").trim(),
-          salary: body.salary || "Not mentioned",
-postedDate: body.posted_at || "Unknown",
-        }
+          salary: String(body.salary || "Not mentioned").trim(),
+          postedDate: String(body.postedDate || "Unknown").trim(),
+          postedAt: new Date(),
+          job_id: body.job_id || undefined,
+        },
       },
-      { upsert: true, returnDocument: 'after' }
+      { upsert: true, new: true }
     );
-
-    console.log("Saved job:", job); // ← DB mein kya gaya
 
     return NextResponse.json({ success: true, data: job }, { status: 201 });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error("DB Save Error:", error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }

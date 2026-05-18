@@ -19,6 +19,7 @@ import { Button } from "../ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import Pagination from "./Pagination";
 import ThemeToggle from "@/components/theme/ThemeToggle";
+import { toast } from "sonner";
 
 // TypeScript interface for a Job document
 interface Job {
@@ -117,6 +118,11 @@ export default function JobDashboard({
     params.set("status", status);
     params.set("page", "1"); // Reset to page 1 on filter change
     router.push(`/dashboard?${params.toString()}`);
+
+    // ⚪ NEUTRAL DEFAULT (White in Light Mode / Slate in Dark Mode)
+    toast(`Status filter set to: ${status}`, {
+      description: "Dashboard updated with matches."
+    });
   };
 
   // Handle score filter clicks and update URL
@@ -126,16 +132,23 @@ export default function JobDashboard({
     params.set("score", score);
     params.set("page", "1"); // Reset to page 1 on filter change
     router.push(`/dashboard?${params.toString()}`);
+
+    // ⚪ NEUTRAL DEFAULT (White in Light Mode / Slate in Dark Mode)
+    const scoreName = score === "all" ? "All Scores" : score === "high" ? "High (80+)" : score === "medium" ? "Mid (50-79)" : "Low (<50)";
+    toast(`Filtering by Match: ${scoreName}`, {
+      icon: "📊"
+    });
   };
 
-  // 3. OPTIMISTIC STATUS UPDATE FUNCTION (Inline PATCH call)
-  // --------------------------------------------------------
+  // 3. OPTIMISTIC STATUS UPDATE FUNCTION (Inline PATCH call with toast feedback)
+  // ------------------------------------------------------------------------------
   // Optimistic Update ka matlab hai: "API call successful hone ka wait mat karo, user ko instantly UI badla hua dikhao, agar API fail ho jaye toh rollback kar do."
   const handleStatusChange = async (id: string, newStatus: string) => {
     setUpdatingId(id);
     
     // Humne pehle hi current jobs ka backup le liya (Rollback ke liye)
     const originalJobs = [...jobs];
+    const jobToUpdate = jobs.find(job => job._id === id);
     
     // Instantly browser state ko update karo taaki user ko koi delay (lag) na lage
     setJobs(prevJobs =>
@@ -153,37 +166,85 @@ export default function JobDashboard({
       if (!response.ok) {
         throw new Error("Failed to update status");
       }
+
+      // Show contextual rich-colored toasts based on selected status!
+      const toastTitle = `"${jobToUpdate?.title || "Job"}" Status Updated`;
+      const toastDescription = `Status set to ${newStatus}.`;
+
+      if (newStatus === "Offer") {
+        // 🎉 RICH GREEN - Success for major achievements
+        toast.success("Congratulations! Offer Secured! 🎉", {
+          description: toastDescription,
+        });
+      } else if (newStatus === "Interviewing") {
+        // 🎯 RICH BLUE - Info for in-progress stages
+        toast.info("Ready for action! Interview Scheduled 🎯", {
+          description: toastDescription,
+        });
+      } else if (newStatus === "Rejected") {
+        // 💔 RICH ORANGE/YELLOW - Warning for rejections
+        toast.warning("Marked as Rejected 💔", {
+          description: "Don't give up! Keep applying for other roles.",
+        });
+      } else {
+        // ✅ RICH GREEN - Default success
+        toast.success("Status updated successfully", {
+          description: `"${jobToUpdate?.title || "Job"}" moved to ${newStatus}.`,
+        });
+      }
+
     } catch (error) {
       console.error("Status update failed:", error);
       // Agar API call fail ho jaye, toh state ko rollback karke purana wala backup set kar do!
       setJobs(originalJobs);
-      alert("Status update failed! Please try again.");
+      
+      // Professional toast notification for optimistic rollback failure
+      toast.error("Failed to update status", {
+        description: `Could not update status for "${jobToUpdate?.title || "this job"}". Reverted back automatically.`,
+      });
     } finally {
       setUpdatingId(null);
     }
   };
 
-  // 4. DELETE FUNCTION (calling DELETE API)
-  // ----------------------------------------
-  const handleDelete = async (id: string) => {
-    // JavaScript alert dialog box confirm karne ke liye
-    if (!confirm("Are you sure you want to delete this job?")) return;
+  // 4. DELETE FUNCTION (calling DELETE API with distinct neutral feedback)
+  // ------------------------------------------------------------------------
+  const handleDelete = async (id: string, jobTitle: string) => {
+    // Destructive confirmation
+    if (!confirm(`Are you sure you want to delete "${jobTitle}"?`)) return;
+    
     setDeletingId(id);
+    // Step 1: Trigger a distinct loading toast manually
+    const toastId = toast.loading(`Removing "${jobTitle}"...`);
+
     try {
-      // DELETE request to the backend API
       const response = await fetch(`/api/jobs/${id}`, {
         method: "DELETE",
       });
-
-      if (response.ok) {
-        // Agar DB se successfully delete ho gaya, toh local state se filter out kar do (Instant UI update!)
-        setJobs(prevJobs => prevJobs.filter(job => job._id !== id));
-      } else {
-        alert("Delete failed!");
+      
+      if (!response.ok) {
+        throw new Error("API request failed");
       }
+      
+      // Update UI
+      setJobs(prevJobs => prevJobs.filter(job => job._id !== id));
+
+      // Step 2: Dismiss the loader and fire a NEUTRAL white/dark toast for deletion (instead of green)
+      toast.dismiss(toastId);
+      toast(`Successfully deleted "${jobTitle}"`, {
+        description: "This record has been removed permanently.",
+        icon: "🗑️"
+      });
+
     } catch (error) {
-      console.error("Delete failed:", error);
+      console.error("Delete execution failed:", error);
+      // Step 3: Dismiss loader and show DISTINCT RED error toast on failure
+      toast.dismiss(toastId);
+      toast.error(`Could not delete "${jobTitle}"`, {
+        description: "An unexpected server error occurred. Please try again."
+      });
     } finally {
+      // Set loading back to null
       setDeletingId(null);
     }
   };
@@ -590,7 +651,7 @@ export default function JobDashboard({
                           <Button
                             variant="destructive" 
                             size="icon" 
-                            onClick={() => handleDelete(job._id)} 
+                            onClick={() => handleDelete(job._id, job.title)} 
                             disabled={deletingId === job._id}
                             className="h-8.5 w-8.5 rounded-xl cursor-pointer"
                           >
@@ -650,7 +711,7 @@ export default function JobDashboard({
                       <Button
                         variant="destructive" 
                         size="icon" 
-                        onClick={() => handleDelete(job._id)} 
+                        onClick={() => handleDelete(job._id, job.title)} 
                         disabled={deletingId === job._id}
                         className="h-8 w-8 rounded-xl shrink-0 cursor-pointer"
                       >
