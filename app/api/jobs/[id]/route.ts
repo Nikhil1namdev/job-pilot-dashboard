@@ -51,17 +51,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     
     // 3. Request Body se data parse karo (status kya rakhna hai)
     const body = await req.json();
-    const { status } = body;
+    const { status, notes } = body;
 
-    console.log(`Updating Job ${id} status to:`, status);
+    console.log(`Updating Job ${id}... status: ${status}, notes length: ${notes?.length}`);
+
+    // Build update object based on what was provided
+    const updateData: any = {};
+    if (status !== undefined) updateData.status = status;
+    if (notes !== undefined) updateData.notes = notes;
 
     // 4. MongoDB updates with findByIdAndUpdate:
-    // - $set: { status } se sirf status field change hoga baaki sab same rahega
-    // - { new: true } se humein purane ki jagah updated new document return hoga
-    // - { runValidators: true } se ensure hoga ki new status humare Schema enum values mein se hi hai!
     const updatedJob = await Job.findByIdAndUpdate(
       id,
-      { $set: { status } },
+      { $set: updateData },
       { new: true, runValidators: true }
     );
 

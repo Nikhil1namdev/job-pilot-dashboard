@@ -22,6 +22,8 @@ import Pagination from "./Pagination";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import { toast } from "sonner";
 import { filterJobs, sortJobs } from "@/lib/jobFilters";
+import ViewToggle from "./ViewToggle";
+import KanbanBoard from "./KanbanBoard";
 
 // TypeScript interface for a Job document
 interface Job {
@@ -35,6 +37,7 @@ interface Job {
   postedDate?: string;
   applyLink?: string;
   source?: string;
+  notes?: string;
 }
 
 interface JobDashboardProps {
@@ -64,6 +67,7 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
   const currentSource = searchParams.get("source") || "all";
   const currentRelevantOnly = searchParams.get("relevant") || "false";
   const currentHideUnknown = searchParams.get("hideUnknown") || "false";
+  const currentView = searchParams.get("view") || "list";
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const limit = 8;
 
@@ -137,6 +141,7 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
       source: "all",
       relevant: "false",
       hideUnknown: "false",
+      view: "list",
       page: "1"
     });
     toast("Filters reset to default.");
@@ -311,6 +316,8 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
       <motion.div variants={itemVariants} className="bg-gradient-to-b from-white to-zinc-50/30 dark:from-zinc-900 dark:to-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 shadow-[0_8px_30px_rgba(0,0,0,0.02)] flex flex-col gap-5">
         
         <div className="flex flex-col lg:flex-row gap-4 justify-between">
+          <ViewToggle currentView={currentView} onChange={(v) => updateParams({ view: v })} />
+          
           <div className="relative flex-1 group">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-zinc-400 dark:text-zinc-500 transition-colors group-focus-within:text-blue-500">
               <Search className="h-4 w-4" />
@@ -507,6 +514,14 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
               Try adjusting your search query, status filters, or score ranges to see jobs.
             </p>
           </div>
+        ) : currentView === "board" ? (
+          <KanbanBoard 
+            jobs={processedJobs} 
+            onStatusChange={handleStatusChange} 
+            onDelete={handleDelete} 
+            onApplyClick={handleApplyClick} 
+            deletingId={deletingId} 
+          />
         ) : (
           <>
             <div className="hidden md:block overflow-x-auto">

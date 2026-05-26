@@ -129,6 +129,11 @@ const JobSchema = new Schema(
       default: "Not Applied",
       enum: ["Not Applied", "Applied", "Interviewing", "Offer", "Rejected"],
     },
+
+    notes: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,
