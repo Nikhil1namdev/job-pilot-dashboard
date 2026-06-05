@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     // 3. Job.create() ke jariye data ko direct 'jobs' collection mein naye document ke roop mein insert karo
     const result = await Job.create({
       ...jobData,        // Saara incoming data copy karo (title, company, score, location etc.)
-      status: 'Pending', // Default status abhi ke liye Pending set kiya
+      status: 'Not Applied', // Default status Not Applied set kiya
       createdAt: new Date() // Create karne ka date-time stamp lagaya
     });
 

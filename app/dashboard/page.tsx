@@ -2,6 +2,8 @@ import connectToDatabase from "@/lib/mongodb";
 import Job from "@/models/Job";
 import JobDashboard from "@/components/jobs/JobDashboard";
 
+export const dynamic = "force-dynamic";
+
 async function getJobs() {
   await connectToDatabase();
 
