@@ -1,3 +1,8 @@
+// Jab aapka n8n automation background mein chal raha hota hai (e.g., LinkedIn ya Google Jobs scrapers se real-time data nikal kar), tab jaise hi use koi nayi job milti hai, woh is route (/api/webhook) par ek automatic POST request trigger karta hai.
+
+// Yeh file us request ke JSON data ko parse karke directly humare MongoDB database mein insert kar deti hai.
+
+
 import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Job from '@/models/Job'; // Apna Job model import karo

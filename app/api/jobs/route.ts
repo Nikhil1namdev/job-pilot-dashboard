@@ -1,3 +1,5 @@
+// Yeh code block humare dashboard ka Job Ingestion (Save & Update) engine hai. Yeh check karta hai ki incoming job duplicate hai ya nahi, aur us hisab se database update ya insert karta hai.
+
 // import { NextResponse } from 'next/server';
 
 // export async function POST(request: Request) {

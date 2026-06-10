@@ -1,12 +1,16 @@
+// Yeh humare dashboard ke search, filters aur sorting ke hard-logic ko control karta hai. Isme pure helper functions hain:
+
 export function normalizeText(value?: string | null): string {
   if (!value) return "";
   return value.toLowerCase().trim();
 }
 
+// SerpAPI se aane wale raw time string (jaise "3 days ago") ko numeric value (days) mein convert karta hai
 export function parsePostedAtToDays(postedAt?: string | null): number {
-  if (!postedAt) return 999;
+  if (!postedAt) return 999; // Unknown date ko door rakhne ke liye bada number
   const text = postedAt.toLowerCase();
   
+  // Agar aaj hi post hui hai, toh 0 return karo
   if (
     text.includes("just now") || 
     text.includes("today") || 
@@ -17,6 +21,7 @@ export function parsePostedAtToDays(postedAt?: string | null): number {
     return 0;
   }
   
+  // Regex pattern ke zariye string se number extract karo
   const daysMatch = text.match(/(\d+)\s*day/);
   if (daysMatch) {
     return parseInt(daysMatch[1], 10);
@@ -32,7 +37,7 @@ export function parsePostedAtToDays(postedAt?: string | null): number {
     return parseInt(monthsMatch[1], 10) * 30;
   }
   
-  return 999;
+  return 999; // Catch-all for very old or unparseable dates
 }
 
 export function isRemoteJob(job: any): boolean {
@@ -79,19 +84,21 @@ export function matchesPostedDate(job: any, postedFilter: string): boolean {
   return true;
 }
 
+// Filter engine check karta hai ki job relevant tech stack se match hoti hai ya nahi
 export function isRelevantJob(job: any): boolean {
   const title = normalizeText(job.title);
   const desc = normalizeText(job.description);
   const combined = title + " " + desc;
 
+  // Good keywords represent current skills
   const goodKeywords = ["react", "mern", "frontend", "front end", "front-end", "javascript", "node.js", "nodejs", "node js", "full stack", "full-stack", "fullstack"];
+  // Bad keywords represent skills that are not matching
   const badKeywords = [".net", "java spring boot", "php", "android", "ios", "devops", "data engineer", "qa tester", "sap", "salesforce", "wordpress", "shopify"];
 
   const hasGood = goodKeywords.some(kw => combined.includes(kw));
   const hasBad = badKeywords.some(kw => combined.includes(kw));
 
-  // Hide jobs if title/description mainly contains bad keywords, 
-  // but DO NOT hide if it also contains good keywords.
+  // Agar negative keywords hain aur positive matching keywords nahi hain, toh job reject kar do (false)
   if (hasBad && !hasGood) {
     return false; 
   }

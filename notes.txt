@@ -31,3 +31,13 @@ Agar URL /api/webhook hai, toh doosri file.
 api/jobs/route.ts: Ye tumne tab banaya tha jab tum Dashboard se "Manual" job add karna chahte ho ya search/delete karna chahte ho.
 
 api/webhook/route.ts: Ye tumne khaas n8n (Automation) ke liye banaya hai taaki automation ka raasta ekdam alag aur saaf rahe.
+
+
+
+
+
+---------
+PATCH Method (Status ya Notes edit karna - Line 44-79)
+PATCH method tab trigger hota hai jab hume pure database document ko bina chhede, uski kisi ek ya do settings (properties) ko edit karna ho.
+
+Use case: Kanban board par card drag-and-drop karna (status badalna), ya notes editor mein typing save karna.
