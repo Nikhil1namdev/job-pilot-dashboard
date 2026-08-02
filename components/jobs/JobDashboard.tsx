@@ -14,7 +14,8 @@ import {
   DollarSign,
   TrendingUp,
   Sparkles,
-  FilterX
+  FilterX,
+  RefreshCw
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -51,6 +52,8 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
 
   useEffect(() => {
     setJobs(initialJobs);
@@ -225,6 +228,46 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
     }
   };
 
+  /**
+   * 🔄 Manual Refresh Handler
+   * -------------------------
+   * Fetches latest jobs stored in MongoDB via GET /api/jobs without reloading the browser.
+   * Updates state and refreshes the Last Refreshed timestamp display.
+   * 
+   * Note: This only fetches existing DB records and does NOT trigger the n8n automation workflow.
+   * Future Scope: An "Admin Sync Jobs" button could be added to trigger the n8n workflow via webhook to fetch fresh jobs from SerpAPI on demand.
+   */
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const response = await fetch("/api/jobs");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.success && Array.isArray(data.jobs)) {
+        setJobs(data.jobs);
+        const now = new Date();
+        const formattedTime = now.toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+        setLastRefreshed(formattedTime);
+        toast.success("Jobs refreshed successfully.");
+      } else {
+        throw new Error(data.error || "Failed to fetch jobs");
+      }
+    } catch (error: any) {
+      console.error("Manual refresh failed:", error);
+      toast.error("Failed to refresh jobs", {
+        description: "Could not fetch latest jobs from database.",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "Applied": return "bg-blue-50/70 text-blue-700 border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/80";
@@ -281,8 +324,23 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
             Analyze, track, and pilot your automatic job applications with premium AI-fitted compatibility insights.
           </p>
         </div>
-        <div className="flex items-center gap-3 self-start md:self-auto">
-          <div className="flex items-center gap-2.5 text-xs font-bold px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full text-zinc-600 dark:text-zinc-300 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+        <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
+          {lastRefreshed && (
+            <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-100/80 dark:bg-zinc-900/80 px-2.5 py-1.5 rounded-lg border border-zinc-200/60 dark:border-zinc-800/80">
+              Refreshed: {lastRefreshed}
+            </span>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="text-xs font-extrabold gap-1.5 rounded-xl px-3.5 py-1.5 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-all cursor-pointer shadow-sm"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 text-blue-500 ${isRefreshing ? "animate-spin" : ""}`} />
+            {isRefreshing ? "Refreshing..." : "Refresh"}
+          </Button>
+          <div className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-600 dark:text-zinc-300 shadow-sm">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Active Session • Local DB Connected
           </div>
           <ThemeToggle />
@@ -402,9 +460,21 @@ export default function JobDashboard({ initialJobs = [] }: JobDashboardProps) {
             </select>
           </div>
 
-          <Button variant="outline" size="sm" onClick={resetFilters} className="ml-auto text-xs font-bold gap-1.5 rounded-xl">
-            <FilterX className="h-3.5 w-3.5" /> Reset Filters
-          </Button>
+          <div className="flex items-center gap-2 ml-auto">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="text-xs font-bold gap-1.5 rounded-xl bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 text-blue-500 ${isRefreshing ? "animate-spin" : ""}`} />
+              {isRefreshing ? "Refreshing..." : "Refresh Jobs"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={resetFilters} className="text-xs font-bold gap-1.5 rounded-xl">
+              <FilterX className="h-3.5 w-3.5" /> Reset Filters
+            </Button>
+          </div>
         </div>
 
         {/* Status Pills */}

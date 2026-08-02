@@ -125,3 +125,36 @@ export async function POST(request: Request) {
     );
   }
 }
+
+/**
+ * 🔄 GET REQUEST HANDLER (Fetch Latest Jobs)
+ * -------------------------------------------
+ * Manual refresh button on Dashboard calls this API to fetch 
+ * the latest jobs directly from MongoDB without page reload.
+ */
+export async function GET() {
+  try {
+    await connectToDatabase();
+
+    // Fetch all jobs from MongoDB using lean() for maximum performance
+    const rawJobs = await Job.find({}).lean();
+
+    // Serialize _id, postedAt, createdAt, updatedAt for client consumption
+    const jobs = rawJobs.map((job: any) => ({
+      ...job,
+      _id: job._id.toString(),
+      postedAt: job.postedAt ? job.postedAt.toISOString() : null,
+      createdAt: job.createdAt ? job.createdAt.toISOString() : null,
+      updatedAt: job.updatedAt ? job.updatedAt.toISOString() : null,
+    }));
+
+    return NextResponse.json({ success: true, jobs }, { status: 200 });
+  } catch (error: any) {
+    console.error("DB Fetch Error:", error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
+  }
+}
+

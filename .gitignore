@@ -43,3 +43,5 @@ next-env.d.ts
 # personal understanding files
 Important notes.md
 understand.md
+/docs/
+notes.txt
